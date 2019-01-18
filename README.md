@@ -71,5 +71,5 @@ MultiDecoder + LSTM
 | webnlg | 0.29 | 0.31 | 0.27 |
 | nyt    | 0.56 | 0.60 | 0.52 |
 
-
-
+TODO:
+fix bugs about logsoftmax(mask * copy_logits)
