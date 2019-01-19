@@ -98,7 +98,7 @@ class Decoder(nn.Module):
     def do_copy(self, output: torch.Tensor, encoder_outputs: torch.Tensor) -> torch.Tensor:
 
         out = torch.cat((output.unsqueeze(1).expand_as(encoder_outputs), encoder_outputs), dim=2)
-        out = F.relu(self.do_copy_linear(out).squeeze(2))
+        out = (self.do_copy_linear(out).squeeze(2))
 
         return out
 
@@ -124,18 +124,21 @@ class Decoder(nn.Module):
 
         output = output.squeeze()
 
-        eos_logits = F.relu(self.do_eos(output))
-        predict_logits = F.relu(self.do_predict(output))
+        eos_logits = (self.do_eos(output))
+        predict_logits = (self.do_predict(output))
 
         predict_logits = F.log_softmax(torch.cat((predict_logits, eos_logits), dim=1), dim=1)
 
         copy_logits = self.do_copy(output, encoder_outputs)
 
         # assert copy_logits.size() == first_entity_mask.size()
-        copy_logits = copy_logits * first_entity_mask
-
         copy_logits = torch.cat((copy_logits, eos_logits), dim=1)
-        copy_logits = F.log_softmax(copy_logits, dim=1)
+        first_entity_mask = torch.cat((first_entity_mask, torch.ones_like(eos_logits)), dim=1)
+        copy_logits = F.softmax(copy_logits, dim=1)
+        copy_logits = copy_logits * first_entity_mask
+        copy_logits = torch.clamp(copy_logits, 1e-10, 1.)
+        copy_logits = torch.log(copy_logits)
+
 
         return (predict_logits, copy_logits), decoder_state
 
